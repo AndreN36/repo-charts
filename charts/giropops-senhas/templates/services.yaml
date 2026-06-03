@@ -1,0 +1,43 @@
+{{- range $component, $config := .Values.services }}
+{{- $deploymentConfig := index $.Values.deployments $component }}
+{{- if $config.ports }}
+{{- range $port := $config.ports }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $port.name }}
+  labels:
+    {{- include "app.labels" $config | nindent 4 }}
+spec:
+  type: {{ $port.serviceType }}
+  ports:
+    - port: {{ $port.port }}
+      targetPort: {{ $port.targetPort }}
+      protocol: TCP
+      name: {{ $port.name }}
+{{- if eq $port.serviceType "NodePort" }}
+      nodePort: {{ $port.nodePort }}
+{{- end }}
+  selector:
+    {{- include "app.labels" $config | nindent 4 }}
+---
+{{- end }}
+{{- else }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $config.name }}
+  labels:
+    {{- include "app.labels" $config | nindent 4 }}
+spec:
+  type: {{ $config.type }}
+  ports:
+    - port: {{ $config.port }}
+      targetPort: {{ $config.targetPort }}
+      protocol: TCP
+      name: {{ $component }}
+  selector:
+    app: {{ $config.selector.app }}
+---
+{{- end }}
+{{- end }}
